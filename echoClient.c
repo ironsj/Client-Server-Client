@@ -10,7 +10,7 @@
 #define MAXLINE 4096 /*max text line length*/
 #define SERV_PORT 3000 /*port*/
 
-char recvline[MAXLINE];
+char recvline[MAXLINE + 10];
 
 void *receiveMessage(void *socket){
 	int clientSocket = *((int *)socket);

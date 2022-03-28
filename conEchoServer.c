@@ -11,7 +11,7 @@
 #define SERV_PORT 3000 /*port*/
 #define LISTENQ 8 /*maximum number of client connections*/
 
-int numClients;
+int numClients = 0;
 pthread_mutex_t mutex;
 int clients[LISTENQ];
 
@@ -30,14 +30,16 @@ void *receiveMessage(void *client_socket){
 	char buf[MAXLINE];
 	int n;
 	while((n = recv(socket, buf, MAXLINE, 0) > 0)){
-		printf("%s", "Received: ");
-		puts(buf);
-		sendToOthers(buf, socket);
-	}
-	
-	if(n < 0){
-		printf("%s\n", "Read error");
-		exit(0);
+		char message[MAXLINE + 10];
+		for(int i = 0; i < numClients; i++){
+			if(clients[i] == socket){
+				printf("Received from client %d: ", i);
+				puts(buf);
+				sprintf(message, "Client %d: %s", i, buf);
+			}
+		}
+		sendToOthers(message, socket);
+		memset(&buf, '\0', MAXLINE);
 	}
 }
 
