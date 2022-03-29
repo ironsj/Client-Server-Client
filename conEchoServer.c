@@ -87,7 +87,7 @@ int main (int argc, char **argv)
 		clilen = sizeof(cliaddr);
 		//accept a connection
 		connfd = accept (listenfd, (struct sockaddr *) &cliaddr, &clilen);
-		//connect clients one at a time
+		//connect clients one at a time (avoid race condition)
 		pthread_mutex_lock(&mutex);
 		//add socket to array
 		clients[numClients] = connfd;

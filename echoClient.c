@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in servaddr;
 	char sendline[MAXLINE];
 	
-	//each client has thread to receive messages from server
+	//client has thread to receive messages from server
 	pthread_t receive;
 
 	//basic check of the arguments
