@@ -10,8 +10,10 @@
 #define MAXLINE 4096 /*max text line length*/
 #define SERV_PORT 3000 /*port*/
 
+//extra 10 characters for "Client n: " (inform other clients who said what)
 char recvline[MAXLINE + 10];
 
+//each client will be able to constantly receive messages
 void *receiveMessage(void *socket){
 	int clientSocket = *((int *)socket);
 	int n;
@@ -25,6 +27,8 @@ int main(int argc, char **argv) {
 	int sockfd;
 	struct sockaddr_in servaddr;
 	char sendline[MAXLINE];
+	
+	//each client has thread to receive messages from server
 	pthread_t receive;
 
 	//basic check of the arguments
@@ -53,12 +57,20 @@ int main(int argc, char **argv) {
 		exit(3);
 	}
 	
+	//creates thread that is always ready for incoming messages
 	pthread_create(&receive, NULL, (void*)receiveMessage, &sockfd);
 
+	//always ready to send message to server which will then send to other clients
 	while (fgets(sendline, MAXLINE, stdin) != NULL) {
-
 		send(sockfd, sendline, strlen(sendline), 0);
 	}
+	
+	//close thread
+	pthread_join(receive, NULL);
+	
+	//close socket (connection to server)
+	close(sockfd);
+	
 
 	exit(0);
 }

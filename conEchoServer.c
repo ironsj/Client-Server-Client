@@ -11,10 +11,16 @@
 #define SERV_PORT 3000 /*port*/
 #define LISTENQ 8 /*maximum number of client connections*/
 
+//increments as more clients connect
 int numClients = 0;
+
+//used to lock shared resources between threads
 pthread_mutex_t mutex;
+
+//array containing the socket connected to each client
 int clients[LISTENQ];
 
+//sends message received from client to every other client connected to server
 void sendToOthers(char *buf, int currSocket){
 	pthread_mutex_lock(&mutex);
 	for(int i = 0; i < numClients; i++){
@@ -25,11 +31,13 @@ void sendToOthers(char *buf, int currSocket){
 	pthread_mutex_unlock(&mutex);
 }
 
+//each thread (connected to another client) is ready to receive message
 void *receiveMessage(void *client_socket){
 	int socket = *((int *)client_socket);
 	char buf[MAXLINE];
 	int n;
 	while((n = recv(socket, buf, MAXLINE, 0) > 0)){
+		//extra 10 characters for "Client n: " (informs other clients who sent message)
 		char message[MAXLINE + 10];
 		for(int i = 0; i < numClients; i++){
 			if(clients[i] == socket){
@@ -38,7 +46,9 @@ void *receiveMessage(void *client_socket){
 				sprintf(message, "Client %d: %s", i, buf);
 			}
 		}
+		//send to every other client
 		sendToOthers(message, socket);
+		//clear buffer
 		memset(&buf, '\0', MAXLINE);
 	}
 }
@@ -77,13 +87,24 @@ int main (int argc, char **argv)
 		clilen = sizeof(cliaddr);
 		//accept a connection
 		connfd = accept (listenfd, (struct sockaddr *) &cliaddr, &clilen);
+		//connect clients one at a time
 		pthread_mutex_lock(&mutex);
+		//add socket to array
 		clients[numClients] = connfd;
+		//increment number of clients
 		numClients++;
 		printf("%s\n","Received request...");
+		//create thread to receive messages from this client
 		pthread_create(&receive, NULL, (void *)receiveMessage, &connfd);
 		pthread_mutex_unlock(&mutex);
 
 	}
-
+	
+	//close connection to each client
+	for(int i = 0; i < numClients; i++){
+		close(clients[i]);
+	}
+	
+	//close listening socket
+ 	close (listenfd); 
 }
